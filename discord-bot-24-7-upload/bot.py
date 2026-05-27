@@ -2481,7 +2481,7 @@ class NativeTicketManageView(discord.ui.View):
 
 class HelpView(discord.ui.View):
     def __init__(self, prefix: str):
-        super().__init__(timeout=300)
+        super().__init__(timeout=None)
         self.prefix = prefix
         self.page = "home"
 
@@ -2602,6 +2602,7 @@ class HelpView(discord.ui.View):
                       f"`{self.prefix}meme`\n"
                       f"`{self.prefix}memespam [số_lượng]`\n"
                       f"`{self.prefix}memestop`\n"
+                      f"`{self.prefix}font <kiểu> <chữ>`\n"
                       f"`{self.prefix}story [chủ_đề]`\n"
                       f"`{self.prefix}roast @tên`"
                   ),
@@ -2611,7 +2612,7 @@ class HelpView(discord.ui.View):
 
         embed = make_embed("Help • Server", color=discord.Color.red())
         embed.add_field(
-            name="Bảo vệ / tiện ích",
+            name="Bảo vệ / setup",
             value=(
                 f"`{self.prefix}clear <số_tin>` / `{self.prefix}trash <số_tin>`\n"
                 f"`{self.prefix}setupserver` - Tạo/gom category và kênh theo style đẹp hơn\n"
@@ -2619,20 +2620,32 @@ class HelpView(discord.ui.View):
                 f"`{self.prefix}autosetallbots` - Quét toàn bộ bot ngoài và tự set khu cho từng bot\n"
                 f"`{self.prefix}setuproles` - Tự tạo bộ role mẫu cho server\n"
                 f"`{self.prefix}setupticketsv2` - Dựng sẵn khung role/kênh/permission cho Tickets v2\n"
-                f"`{self.prefix}ticketpanel [#kênh]` - Gửi panel mở ticket của chính bot bạn\n"
+                f"`{self.prefix}ticketpanel [#kênh]` - Gửi panel mở ticket"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Bot / member",
+            value=(
                 f"`{self.prefix}changenamebot` - Đổi tên bot thành `SKG|BOT`, gắn role `BOT SKG`\n"
                 f"`{self.prefix}changenamemember` - Đổi tên member thành `SKG| tên`\n"
                 f"`{self.prefix}setbotzone @bot <zone>` - Gán bot vào khu như `chat`, `welcome`, `giveaway`\n"
                 f"`{self.prefix}botchat @bot`, `{self.prefix}botwelcome @bot`, `{self.prefix}botgiveaway @bot`\n"
                 f"`{self.prefix}setbotchannel @bot #kênh` - Gán bot vào đúng 1 kênh cụ thể\n"
                 f"`{self.prefix}clearbotzone @bot` - Bỏ zone riêng của bot đó\n"
-                f"`{self.prefix}checkbotperms` - Kiểm tra bot nào đang có quyền nguy hiểm\n"
+                f"`{self.prefix}checkbotperms` - Kiểm tra bot có quyền nguy hiểm"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Dọn server / tự động",
+            value=(
                 f"`{self.prefix}cleansetupserver` - Xóa toàn bộ layout mà setupserver đã tạo\n"
                 f"`{self.prefix}wipeallserver confirm` - Xóa gần như toàn bộ server, giữ lại kênh hiện tại\n"
                 "Bot đang tự chống spam tin nhắn liên tục.\n"
                 "Bot lạ vào server sẽ bị kick nếu không nằm trong danh sách cho phép.\n"
-                "Bot cũng có thể DM riêng cho admin biết ai đã thêm bot lạ.\n"
-                "Bot khác sẽ bị ép nói đúng kênh theo loại bot (giveaway/ticket/welcome/boost...), trừ bot của bạn."
+                "Bot có thể DM admin khi có bot lạ được thêm.\n"
+                "Bot khác sẽ bị ép nói đúng kênh theo loại bot."
             ),
             inline=False,
         )
@@ -2645,37 +2658,44 @@ class HelpView(discord.ui.View):
 
     async def switch_page(self, interaction: discord.Interaction, page: str) -> None:
         self.page = page
-        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        try:
+            await interaction.response.edit_message(embed=repair_embed(self.build_embed()), view=self)
+        except (discord.HTTPException, discord.InteractionResponded) as exc:
+            message = f"Nút help bị lỗi `{type(exc).__name__}`. Gõ lại `{self.prefix}help` giúp mình nha."
+            if not interaction.response.is_done():
+                await interaction.response.send_message(message, ephemeral=True)
+            else:
+                await interaction.followup.send(message, ephemeral=True)
 
-    @discord.ui.button(label="Tổng quan", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label="Tổng quan", style=discord.ButtonStyle.secondary, row=0, custom_id="skg_help_home")
     async def home_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "home")
 
-    @discord.ui.button(label="Chat", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label="Chat", style=discord.ButtonStyle.secondary, row=0, custom_id="skg_help_chat")
     async def chat_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "chat")
 
-    @discord.ui.button(label="Game", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label="Game", style=discord.ButtonStyle.secondary, row=0, custom_id="skg_help_game")
     async def game_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "game")
 
-    @discord.ui.button(label="Ma Sói", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label="Ma Sói", style=discord.ButtonStyle.secondary, row=0, custom_id="skg_help_werewolf")
     async def werewolf_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "werewolf")
 
-    @discord.ui.button(label="Tiền Ảo", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Tiền Ảo", style=discord.ButtonStyle.secondary, row=1, custom_id="skg_help_economy")
     async def economy_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "economy")
 
-    @discord.ui.button(label="Vay/Nợ", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Vay/Nợ", style=discord.ButtonStyle.secondary, row=1, custom_id="skg_help_debt")
     async def debt_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "debt")
 
-    @discord.ui.button(label="Vui Vẻ", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Vui Vẻ", style=discord.ButtonStyle.secondary, row=1, custom_id="skg_help_fun")
     async def fun_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "fun")
 
-    @discord.ui.button(label="Server", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Server", style=discord.ButtonStyle.secondary, row=1, custom_id="skg_help_server")
     async def server_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "server")
 
@@ -3525,6 +3545,7 @@ def should_send_sleep_reminder(guild_id: int, user_id: int) -> bool:
 
 
 keep_alive_runner: Optional[web.AppRunner] = None
+persistent_views_registered = False
 
 
 async def keep_alive_home(_request: web.Request) -> web.Response:
@@ -3562,9 +3583,13 @@ async def start_keep_alive_server() -> None:
 
 @bot.event
 async def on_ready() -> None:
+    global persistent_views_registered
     await start_keep_alive_server()
-    bot.add_view(NativeTicketPanelView())
-    bot.add_view(NativeTicketManageView())
+    if not persistent_views_registered:
+        bot.add_view(NativeTicketPanelView())
+        bot.add_view(NativeTicketManageView())
+        bot.add_view(HelpView(get_prefix()))
+        persistent_views_registered = True
     assigned_roles = 0
     for guild in bot.guilds:
         for member in await fetch_all_bot_members(guild):
@@ -4578,6 +4603,135 @@ async def keobuaobao(ctx: commands.Context, choice: str, bet_amount: Optional[in
     reminder = get_daily_reminder(ctx.author.id)
     if reminder:
         embed.add_field(name="Nhắc nhẹ", value=reminder, inline=False)
+    await ctx.send(embed=embed)
+
+
+FONT_STYLE_ALIASES = {
+    "b": "bold",
+    "bold": "bold",
+    "dam": "bold",
+    "i": "italic",
+    "italic": "italic",
+    "nghieng": "italic",
+    "bi": "bolditalic",
+    "bolditalic": "bolditalic",
+    "damnghieng": "bolditalic",
+    "sans": "sans",
+    "sansbold": "sansbold",
+    "sansdam": "sansbold",
+    "mono": "mono",
+    "monospace": "mono",
+    "full": "fullwidth",
+    "fullwidth": "fullwidth",
+    "wide": "fullwidth",
+    "small": "smallcaps",
+    "smallcaps": "smallcaps",
+    "caps": "smallcaps",
+}
+FONT_STYLE_NAMES = ("bold", "italic", "bolditalic", "sans", "sansbold", "mono", "fullwidth", "smallcaps")
+SMALLCAPS_LETTERS = dict(
+    zip(
+        "abcdefghijklmnopqrstuvwxyz",
+        "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ",
+    )
+)
+
+
+def translate_font_ranges(
+    text: str,
+    upper_start: int,
+    lower_start: int,
+    digit_start: Optional[int] = None,
+) -> str:
+    converted = []
+    for char in text:
+        if "A" <= char <= "Z":
+            converted.append(chr(upper_start + ord(char) - ord("A")))
+        elif "a" <= char <= "z":
+            converted.append(chr(lower_start + ord(char) - ord("a")))
+        elif digit_start is not None and "0" <= char <= "9":
+            converted.append(chr(digit_start + ord(char) - ord("0")))
+        else:
+            converted.append(char)
+    return "".join(converted)
+
+
+def translate_fullwidth(text: str) -> str:
+    converted = []
+    for char in text:
+        if char == " ":
+            converted.append("　")
+        elif 33 <= ord(char) <= 126:
+            converted.append(chr(ord(char) + 0xFEE0))
+        else:
+            converted.append(char)
+    return "".join(converted)
+
+
+def translate_smallcaps(text: str) -> str:
+    return "".join(SMALLCAPS_LETTERS.get(char.casefold(), char) if char.isalpha() else char for char in text)
+
+
+def stylize_text(style: str, text: str) -> str:
+    if style == "bold":
+        return translate_font_ranges(text, 0x1D400, 0x1D41A, 0x1D7CE)
+    if style == "italic":
+        return translate_font_ranges(text, 0x1D434, 0x1D44E)
+    if style == "bolditalic":
+        return translate_font_ranges(text, 0x1D468, 0x1D482)
+    if style == "sans":
+        return translate_font_ranges(text, 0x1D5A0, 0x1D5BA, 0x1D7E2)
+    if style == "sansbold":
+        return translate_font_ranges(text, 0x1D5D4, 0x1D5EE, 0x1D7EC)
+    if style == "mono":
+        return translate_font_ranges(text, 0x1D670, 0x1D68A, 0x1D7F6)
+    if style == "fullwidth":
+        return translate_fullwidth(text)
+    if style == "smallcaps":
+        return translate_smallcaps(text)
+    return text
+
+
+def normalize_font_style(style: str) -> Optional[str]:
+    key = normalize_lookup_text(style).replace(" ", "")
+    return FONT_STYLE_ALIASES.get(key)
+
+
+@bot.command(name="font", aliases=["fonts", "fontchu", "kieu", "fancy"])
+async def font_command(ctx: commands.Context, style: Optional[str] = None, *, text: Optional[str] = None) -> None:
+    prefix = get_prefix()
+    if style is None or text is None:
+        embed = make_embed(
+            "Đổi Font Chữ",
+            f"Cách dùng: `{prefix}font <kiểu> <chữ>`",
+            discord.Color.magenta(),
+        )
+        embed.add_field(name="Kiểu có sẵn", value=", ".join(f"`{name}`" for name in FONT_STYLE_NAMES), inline=False)
+        embed.add_field(
+            name="Ví dụ",
+            value=f"`{prefix}font bold SKG server`\n`{prefix}font mono hello 123`\n`{prefix}font fullwidth xin chào`",
+            inline=False,
+        )
+        embed.set_footer(text="Chữ tiếng Việt có dấu có thể giữ nguyên nếu Unicode không có bản font tương ứng.")
+        await ctx.send(embed=embed)
+        return
+
+    normalized_style = normalize_font_style(style)
+    if normalized_style is None:
+        await ctx.send(
+            f"Kiểu font chưa có. Dùng một trong các kiểu: {', '.join(f'`{name}`' for name in FONT_STYLE_NAMES)}"
+        )
+        return
+
+    result = stylize_text(normalized_style, text.strip())
+    if not result:
+        await ctx.send(f"Cách dùng: `{prefix}font <kiểu> <chữ>`")
+        return
+    if len(result) > 1900:
+        result = f"{result[:1900]}..."
+
+    embed = make_embed(f"Font • {normalized_style}", result, discord.Color.magenta())
+    embed.set_footer(text="Copy phần chữ trong embed để dùng trong chat/tên kênh/rule.")
     await ctx.send(embed=embed)
 
 

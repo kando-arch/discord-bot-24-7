@@ -88,6 +88,7 @@ Neu `/health` tra ve JSON co `status: online` la duoc.
 - `!taixiu <tai|xiu>`
 - `!taixiuroom <so_tien_cuoc> [thoi_gian]`
 - `!coinflip`
+- `!font <kieu> <chu>`
 - `!meme`
 - `!memespam [so_luong_toi_da_100]`
 - `!roast @ten`
