@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: discord-skg-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    autoDeploy: true
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.2
+      - key: BOT_PREFIX
+        value: "!"
+      - key: KEEP_ALIVE_HOST
+        value: 0.0.0.0

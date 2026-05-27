@@ -1,0 +1,185 @@
+{
+  "users": {
+    "1263522217489334544": {
+      "balance": 0,
+      "earned_total": 1829894,
+      "lost_total": 1829894,
+      "daily_streak_claims": 2,
+      "last_daily": "2026-05-04",
+      "inventory": [
+        {
+          "key": "can_tre",
+          "durability": 20
+        },
+        {
+          "key": "cuoc_vang",
+          "durability": 61
+        },
+        {
+          "key": "sung_san",
+          "durability": 31
+        },
+        {
+          "key": "dao_sat",
+          "durability": 21
+        },
+        {
+          "key": "can_bach_kim",
+          "durability": 40
+        },
+        {
+          "key": "sung_tia",
+          "durability": 41
+        },
+        {
+          "key": "cuoc_than_thoai",
+          "durability": 94
+        },
+        {
+          "key": "sung_thien_ha",
+          "durability": 63
+        },
+        {
+          "key": "can_hai_vuong",
+          "durability": 91
+        },
+        {
+          "key": "moi_thom",
+          "durability": 32
+        }
+      ],
+      "challenge": null,
+      "challenge_progress": {
+        "fish": 20,
+        "mine": 14,
+        "hunt": 48,
+        "chop": 87,
+        "meme": 1
+      }
+    },
+    "1345633149882990602": {
+      "balance": 0,
+      "earned_total": 1500,
+      "lost_total": 1500,
+      "daily_streak_claims": 0,
+      "last_daily": null
+    },
+    "1449171518520164587": {
+      "balance": 989,
+      "earned_total": 56039,
+      "lost_total": 55050,
+      "daily_streak_claims": 1,
+      "last_daily": "2026-05-03",
+      "inventory": [
+        {
+          "key": "can_tan_thu",
+          "durability": 17
+        },
+        {
+          "key": "sung_ngan",
+          "durability": 17
+        }
+      ],
+      "challenge": null,
+      "challenge_progress": {
+        "fish": 3,
+        "hunt": 3,
+        "meme": 2
+      }
+    },
+    "1381558652481179820": {
+      "balance": 16000,
+      "earned_total": 16000,
+      "lost_total": 0,
+      "daily_streak_claims": 0,
+      "last_daily": null,
+      "inventory": [],
+      "challenge": null,
+      "challenge_progress": {}
+    },
+    "1412357241486708788": {
+      "balance": 1000,
+      "earned_total": 355000,
+      "lost_total": 354000,
+      "daily_streak_claims": 2,
+      "last_daily": "2026-05-04",
+      "inventory": [],
+      "challenge": null,
+      "challenge_progress": {}
+    },
+    "1274252583581515839": {
+      "balance": 1000,
+      "earned_total": 1000,
+      "lost_total": 0,
+      "daily_streak_claims": 0,
+      "last_daily": null,
+      "inventory": [],
+      "challenge": null,
+      "challenge_progress": {}
+    },
+    "1390677604436021312": {
+      "balance": 2000,
+      "earned_total": 2000,
+      "lost_total": 0,
+      "daily_streak_claims": 1,
+      "last_daily": "2026-05-03",
+      "inventory": [],
+      "challenge": null,
+      "challenge_progress": {}
+    },
+    "1460531167114690754": {
+      "balance": 1000,
+      "earned_total": 1000,
+      "lost_total": 0,
+      "daily_streak_claims": 0,
+      "last_daily": null,
+      "inventory": [],
+      "challenge": null,
+      "challenge_progress": {}
+    }
+  },
+  "debts": [
+    {
+      "lender_id": 0,
+      "borrower_id": 1381558652481179820,
+      "amount": 15000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    },
+    {
+      "lender_id": 0,
+      "borrower_id": 1449171518520164587,
+      "amount": 20000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    },
+    {
+      "lender_id": 0,
+      "borrower_id": 1412357241486708788,
+      "amount": 20000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    },
+    {
+      "lender_id": 1263522217489334544,
+      "borrower_id": 1449171518520164587,
+      "amount": 10000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    },
+    {
+      "lender_id": 1263522217489334544,
+      "borrower_id": 1449171518520164587,
+      "amount": 3000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    },
+    {
+      "lender_id": 1263522217489334544,
+      "borrower_id": 1412357241486708788,
+      "amount": 1000,
+      "due_date": "2026-05-10",
+      "last_reminded": null
+    }
+  ]
+}
