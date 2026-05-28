@@ -79,8 +79,18 @@ Neu `/health` tra ve JSON co `status: online` la duoc.
 
 - `!ping`
 - `!help`
+- `!help server`
+- `!help fun`
 - `!chat <noi_dung>`
 - `!reset`
+- `!serverinfo`
+- `!sendrules [#kenh]`
+- `!announce #kenh <noi_dung>`
+- `!slowmode <giay> [#kenh]`
+- `!lockchannel [#kenh]`
+- `!unlockchannel [#kenh]`
+- `!stylechannel [#kenh] <style> <ten>`
+- `!stylechannels <style> confirm`
 - `!join`
 - `!leave`
 - `!kick @ten_nguoi_dung [ly_do]`

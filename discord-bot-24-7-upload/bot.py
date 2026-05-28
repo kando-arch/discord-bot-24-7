@@ -68,6 +68,73 @@ MEMBER_NICKNAME_PREFIX = "SKG| "
 MAX_DISCORD_NICKNAME_LENGTH = 32
 KEEP_ALIVE_HOST = os.getenv("KEEP_ALIVE_HOST", "0.0.0.0")
 KEEP_ALIVE_PORT = get_env_int("PORT", get_env_int("KEEP_ALIVE_PORT", 8080))
+MAX_DISCORD_CHANNEL_NAME_LENGTH = 100
+CHANNEL_STYLE_TEMPLATES = {
+    "cute": "⊂ {icon} ૩ : {name}·°ᐢ₊",
+    "soft": "˚₊‧ {icon} ︰ {name} ˚ ༘",
+    "clean": "{icon}・{name}",
+    "line": "・{icon}・{name}・",
+    "star": "✦ {icon} ︰ {name} ✦",
+}
+CHANNEL_STYLE_ALIASES = {
+    "cute": "cute",
+    "kawaii": "cute",
+    "dep": "cute",
+    "soft": "soft",
+    "nhenhang": "soft",
+    "clean": "clean",
+    "gon": "clean",
+    "line": "line",
+    "dong": "line",
+    "star": "star",
+    "sao": "star",
+}
+CHANNEL_ICON_RULES = [
+    (("rule", "rules", "luat", "noiquy"), "📜"),
+    (("announce", "announcement", "announcements", "news", "thongbao"), "📢"),
+    (("welcome", "hello", "hi", "chao"), "👋"),
+    (("goodbye", "bye", "farewell"), "🥺"),
+    (("general", "chat", "talk", "trochuyen"), "💬"),
+    (("bot", "commands", "cmd", "lenh"), "🤖"),
+    (("giveaway", "gift", "drop"), "🎁"),
+    (("ticket", "support"), "🎫"),
+    (("mail", "inbox", "letter"), "✉️"),
+    (("hotline", "hotlines", "help", "hotro"), "☎️"),
+    (("resource", "resources", "tai-nguyen", "tailieu"), "📚"),
+    (("vibe", "vibes", "chill"), "🌙"),
+    (("art", "draw", "drawing"), "🎨"),
+    (("promo", "promote", "ads", "quangcao"), "📣"),
+    (("boost", "boosts", "booster"), "💎"),
+    (("tag", "tags"), "🏷️"),
+    (("emote", "emotes", "emoji"), "😀"),
+    (("edit", "edits", "clip", "video"), "🎬"),
+    (("role", "roles"), "💠"),
+    (("staff", "admin", "mod", "team"), "🛡️"),
+    (("partner", "partners"), "🤝"),
+    (("vouch", "proof", "review"), "✅"),
+    (("game", "gaming"), "🎮"),
+    (("music", "song", "songs"), "🎵"),
+    (("voice", "vc"), "🔊"),
+    (("log", "logs"), "📄"),
+    (("event", "events"), "🎉"),
+]
+SERVER_RULES_15 = [
+    "Tôn trọng tất cả thành viên, không xúc phạm hoặc công kích cá nhân.",
+    "Không spam tin nhắn, emoji, sticker, ảnh hoặc mention liên tục.",
+    "Không gửi nội dung 18+, gore, bạo lực quá mức hoặc gây khó chịu.",
+    "Không phân biệt vùng miền, giới tính, tôn giáo, chủng tộc hoặc xu hướng cá nhân.",
+    "Không quảng cáo server, link, shop hoặc dịch vụ khi chưa được admin cho phép.",
+    "Không scam, lừa đảo, gửi link độc hại hoặc file lạ.",
+    "Không leak thông tin cá nhân của người khác.",
+    "Không giả mạo admin, mod, bot hoặc thành viên khác.",
+    "Dùng đúng kênh theo chủ đề, tránh nói chuyện lệch kênh quá nhiều.",
+    "Không gây war, kích drama hoặc kéo chuyện riêng vào server.",
+    "Không lợi dụng bug, bot command hoặc hệ thống server để phá hoại.",
+    "Tôn trọng quyết định của admin/mod; khiếu nại thì nhắn riêng lịch sự.",
+    "Không ping admin/mod vô lý, chỉ ping khi thật sự cần hỗ trợ.",
+    "Voice chat phải lịch sự, không hú hét, bật nhạc lớn hoặc gây ồn cố ý.",
+    "Vi phạm rule có thể bị mute, kick hoặc ban tùy mức độ.",
+]
 
 SHOP_ITEMS = {
     "can_tre": {"name": "Cần tre", "price": 700, "type": "rod", "power": 1},
@@ -1075,6 +1142,65 @@ def normalize_lookup_text(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text.casefold())
     normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return "".join(ch for ch in normalized if ch.isalnum() or ch.isspace()).strip()
+
+
+def normalize_channel_style(raw_style: Optional[str]) -> Optional[str]:
+    if raw_style is None:
+        return None
+    key = normalize_lookup_text(raw_style).replace(" ", "")
+    return CHANNEL_STYLE_ALIASES.get(key)
+
+
+def strip_channel_decoration(raw_name: str) -> str:
+    text = raw_name.strip()
+    for separator in ("︰", ":", "・", "•", "|"):
+        if separator in text:
+            parts = [part.strip() for part in text.split(separator) if part.strip()]
+            if parts:
+                text = max(parts, key=lambda part: len(normalize_lookup_text(part)))
+    return text
+
+
+def clean_channel_label(raw_name: str) -> str:
+    normalized = unicodedata.normalize("NFKD", strip_channel_decoration(raw_name).casefold())
+    cleaned: list[str] = []
+    previous_dash = False
+    for char in normalized:
+        if unicodedata.combining(char):
+            continue
+        if ("a" <= char <= "z") or ("0" <= char <= "9"):
+            cleaned.append(char)
+            previous_dash = False
+        elif char in {" ", "-", "_", ".", "/", ":"} and not previous_dash:
+            cleaned.append("-")
+            previous_dash = True
+
+    label = "".join(cleaned).strip("-")
+    return label or "channel"
+
+
+def detect_channel_icon(label: str) -> str:
+    haystack = label.replace("-", " ")
+    words = set(haystack.split())
+    for keywords, icon in CHANNEL_ICON_RULES:
+        if any(keyword in words or keyword in haystack for keyword in keywords):
+            return icon
+    return "✨"
+
+
+def split_channel_icon(raw_name: str) -> tuple[Optional[str], str]:
+    parts = raw_name.strip().split(maxsplit=1)
+    if parts and len(parts[0]) <= 4 and any(not char.isalnum() for char in parts[0]):
+        return parts[0], parts[1] if len(parts) > 1 else "channel"
+    return None, raw_name
+
+
+def decorate_channel_name(style: str, raw_name: str) -> str:
+    explicit_icon, label_text = split_channel_icon(raw_name)
+    label = clean_channel_label(label_text)
+    icon = explicit_icon or detect_channel_icon(label)
+    decorated = CHANNEL_STYLE_TEMPLATES[style].format(icon=icon, name=label)
+    return decorated[:MAX_DISCORD_CHANNEL_NAME_LENGTH].rstrip("-・:︰ ")
 
 
 def message_contains_werewolf_dm_leak(text: str) -> bool:
@@ -2487,7 +2613,7 @@ class HelpView(discord.ui.View):
 
     def build_embed(self) -> discord.Embed:
         if self.page == "home":
-            embed = make_embed("Bảng Lệnh Bot", "Chọn nút bên dưới để xem từng nhóm lệnh :vv", discord.Color.blurple())
+            embed = make_embed("Bảng Lệnh Bot", f"Dùng `{self.prefix}help <nhóm>` để xem từng nhóm lệnh :vv", discord.Color.blurple())
             embed.add_field(name="Trang hiện tại", value="Tổng quan", inline=False)
             return embed
         if self.page == "chat":
@@ -2650,8 +2776,21 @@ class HelpView(discord.ui.View):
             inline=False,
         )
         embed.add_field(
+            name="Cải tiến server",
+            value=(
+                f"`{self.prefix}serverinfo` - Xem thống kê server\n"
+                f"`{self.prefix}sendrules [#kênh]` - Gửi bảng 15 luật server\n"
+                f"`{self.prefix}announce #kênh <nội_dung>` - Gửi thông báo embed\n"
+                f"`{self.prefix}slowmode <giây> [#kênh]` - Đặt slowmode\n"
+                f"`{self.prefix}lockchannel [#kênh]` / `{self.prefix}unlockchannel [#kênh]`\n"
+                f"`{self.prefix}stylechannel [#kênh] <style> <tên>` - Làm đẹp 1 kênh\n"
+                f"`{self.prefix}stylechannels <style> confirm` - Làm đẹp toàn bộ kênh"
+            ),
+            inline=False,
+        )
+        embed.add_field(
             name="Quyền dùng lệnh",
-            value="Các lệnh liên quan tới **server/layout/xóa chat/xóa kênh** giờ chỉ **chủ server** mới dùng được. Member chủ yếu dùng lệnh game và bot thường thôi.",
+            value="Lệnh layout/xóa server vẫn ưu tiên **chủ server**. Lệnh thông báo, slowmode, khóa kênh cần quyền **Manage Server** hoặc **Manage Channels** tùy lệnh.",
             inline=False,
         )
         return embed
@@ -2659,13 +2798,27 @@ class HelpView(discord.ui.View):
     async def switch_page(self, interaction: discord.Interaction, page: str) -> None:
         self.page = page
         try:
-            await interaction.response.edit_message(embed=repair_embed(self.build_embed()), view=self)
+            embed = repair_embed(self.build_embed())
+            if interaction.response.is_done():
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=embed, ephemeral=True)
         except (discord.HTTPException, discord.InteractionResponded) as exc:
             message = f"Nút help bị lỗi `{type(exc).__name__}`. Gõ lại `{self.prefix}help` giúp mình nha."
             if not interaction.response.is_done():
                 await interaction.response.send_message(message, ephemeral=True)
             else:
                 await interaction.followup.send(message, ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
+        message = f"Nút help bị lỗi `{type(error).__name__}`. Gõ lại `{self.prefix}help` giúp mình nha."
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(message, ephemeral=True)
+            else:
+                await interaction.followup.send(message, ephemeral=True)
+        except discord.HTTPException:
+            pass
 
     @discord.ui.button(label="Tổng quan", style=discord.ButtonStyle.secondary, row=0, custom_id="skg_help_home")
     async def home_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
@@ -2698,6 +2851,88 @@ class HelpView(discord.ui.View):
     @discord.ui.button(label="Server", style=discord.ButtonStyle.secondary, row=1, custom_id="skg_help_server")
     async def server_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await self.switch_page(interaction, "server")
+
+
+HELP_PAGE_ORDER = ("chat", "game", "werewolf", "economy", "debt", "fun", "server")
+HELP_PAGE_LABELS = {
+    "chat": "Chat",
+    "game": "Game",
+    "werewolf": "Ma Sói",
+    "economy": "Tiền Ảo",
+    "debt": "Vay/Nợ",
+    "fun": "Vui Vẻ",
+    "server": "Server",
+}
+HELP_PAGE_ALIASES = {
+    "chat": "chat",
+    "trochuyen": "chat",
+    "game": "game",
+    "masoi": "werewolf",
+    "werewolf": "werewolf",
+    "ww": "werewolf",
+    "tienao": "economy",
+    "money": "economy",
+    "economy": "economy",
+    "vayno": "debt",
+    "debt": "debt",
+    "no": "debt",
+    "vuive": "fun",
+    "fun": "fun",
+    "server": "server",
+    "sever": "server",
+}
+
+
+def normalize_help_page(raw_page: Optional[str]) -> Optional[str]:
+    if raw_page is None:
+        return None
+    key = normalize_lookup_text(raw_page).replace(" ", "")
+    return HELP_PAGE_ALIASES.get(key)
+
+
+def build_help_overview(prefix: str) -> discord.Embed:
+    embed = make_embed(
+        "Bảng Lệnh Bot",
+        "Gõ lệnh theo nhóm bên dưới để xem chi tiết. Bản help này không dùng nút nên sẽ không lỗi tương tác nữa.",
+        discord.Color.blurple(),
+    )
+    embed.add_field(
+        name="Nhóm lệnh",
+        value="\n".join(f"`{prefix}help {page}` - {HELP_PAGE_LABELS[page]}" for page in HELP_PAGE_ORDER),
+        inline=False,
+    )
+    embed.add_field(
+        name="Lệnh nhanh",
+        value=(
+            f"`{prefix}ping`\n"
+            f"`{prefix}font bold SKG server`\n"
+            f"`{prefix}changenamebot`\n"
+            f"`{prefix}changenamemember`"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Làm đẹp / quản lý server",
+        value=(
+            f"`{prefix}serverinfo`\n"
+            f"`{prefix}sendrules [#kênh]`\n"
+            f"`{prefix}announce #kênh <nội_dung>`\n"
+            f"`{prefix}slowmode <giây> [#kênh]`\n"
+            f"`{prefix}lockchannel [#kênh]` / `{prefix}unlockchannel [#kênh]`\n"
+            f"`{prefix}stylechannel [#kênh] <style> <tên>`\n"
+            f"`{prefix}stylechannels <style> confirm`"
+        ),
+        inline=False,
+    )
+    return embed
+
+
+def build_help_page(prefix: str, page: Optional[str]) -> discord.Embed:
+    if page is None:
+        return build_help_overview(prefix)
+    view = HelpView(prefix)
+    view.page = page
+    return view.build_embed()
 
 
 def remember_message(channel_id: int, speaker: str, text: str) -> None:
@@ -5377,6 +5612,279 @@ async def clear_messages(ctx: commands.Context, amount: Optional[int] = None) ->
         pass
 
 
+def build_channel_style_help(prefix: str) -> discord.Embed:
+    embed = make_embed(
+        "Làm Đẹp Tên Kênh",
+        "Bot tự chọn icon theo tên kênh: rules -> 📜, announcement -> 📢, mail -> ✉️, art -> 🎨, boost -> 💎...",
+        discord.Color.fuchsia(),
+    )
+    embed.add_field(name="Style", value=", ".join(f"`{style}`" for style in CHANNEL_STYLE_TEMPLATES), inline=False)
+    embed.add_field(
+        name="Đổi 1 kênh",
+        value=(
+            f"`{prefix}stylechannel cute mail`\n"
+            f"`{prefix}stylechannel #rules soft rules`\n"
+            f"`{prefix}stylechannel #art star art`"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Đổi toàn bộ",
+        value=(
+            f"`{prefix}stylechannels cute` - xem trước\n"
+            f"`{prefix}stylechannels cute confirm` - đổi toàn bộ text channel"
+        ),
+        inline=False,
+    )
+    return embed
+
+
+@bot.command(name="stylechannel", aliases=["lamdepkenh", "kenhdep", "decorchannel", "channelstyle"])
+async def stylechannel(
+    ctx: commands.Context,
+    channel: Optional[discord.TextChannel] = None,
+    style_or_name: Optional[str] = None,
+    *,
+    name: Optional[str] = None,
+) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not isinstance(ctx.author, discord.Member) or not ctx.author.guild_permissions.manage_channels:
+        await ctx.send("Bạn cần quyền **Manage Channels** để đổi style tên kênh.")
+        return
+
+    me = ctx.guild.me
+    if me is None or not me.guild_permissions.manage_channels:
+        await ctx.send("Bot đang thiếu quyền **Manage Channels** nên chưa đổi tên kênh được.")
+        return
+
+    target_channel = channel
+    if target_channel is None:
+        if not isinstance(ctx.channel, discord.TextChannel):
+            await ctx.send(embed=build_channel_style_help(get_prefix()))
+            return
+        target_channel = ctx.channel
+
+    if style_or_name is None:
+        await ctx.send(embed=build_channel_style_help(get_prefix()))
+        return
+
+    detected_style = normalize_channel_style(style_or_name)
+    if detected_style is not None and name:
+        style = detected_style
+        raw_name = name
+    else:
+        style = "cute"
+        raw_name = " ".join(part for part in (style_or_name, name) if part)
+
+    new_name = decorate_channel_name(style, raw_name)
+    old_name = target_channel.name
+    try:
+        await target_channel.edit(name=new_name, reason=f"Đổi style tên kênh bởi {ctx.author}")
+    except discord.Forbidden:
+        await ctx.send("Bot không đủ quyền để đổi tên kênh này. Kiểm tra role bot và quyền **Manage Channels**.")
+        return
+    except discord.HTTPException as exc:
+        await ctx.send(f"Discord không nhận tên kênh này: `{type(exc).__name__}`")
+        return
+
+    await ctx.send(embed=make_embed("Đã Làm Đẹp Kênh", f"`{old_name}` -> `{new_name}`", discord.Color.fuchsia()))
+
+
+@bot.command(name="stylechannels", aliases=["lamdepallkenh", "decorchannels", "styleallchannels"])
+async def stylechannels(ctx: commands.Context, style_name: Optional[str] = "cute", confirm: Optional[str] = None) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not is_server_owner(ctx.author):
+        await ctx.send("Đổi toàn bộ kênh là lệnh lớn, chỉ **chủ server** mới dùng được.")
+        return
+
+    me = ctx.guild.me
+    if me is None or not me.guild_permissions.manage_channels:
+        await ctx.send("Bot đang thiếu quyền **Manage Channels** nên chưa đổi tên kênh được.")
+        return
+
+    style = normalize_channel_style(style_name) or "cute"
+    previews = [
+        (channel.name, decorate_channel_name(style, channel.name))
+        for channel in ctx.guild.text_channels
+    ]
+    if (confirm or "").strip().lower() != "confirm":
+        lines = [f"`{old}` -> `{new}`" for old, new in previews[:15]]
+        if len(previews) > 15:
+            lines.append(f"...và {len(previews) - 15} kênh nữa")
+        embed = make_embed(
+            "Xem Trước Làm Đẹp Kênh",
+            "\n".join(lines) or "Không có kênh text nào.",
+            discord.Color.fuchsia(),
+        )
+        embed.set_footer(text=f"Nếu muốn đổi thật, dùng: {get_prefix()}stylechannels {style} confirm")
+        await ctx.send(embed=embed)
+        return
+
+    renamed = 0
+    skipped = 0
+    for channel, (_, new_name) in zip(ctx.guild.text_channels, previews):
+        if channel.name == new_name:
+            skipped += 1
+            continue
+        try:
+            await channel.edit(name=new_name, reason=f"Làm đẹp toàn bộ kênh bởi {ctx.author}")
+            renamed += 1
+            await asyncio.sleep(0.8)
+        except (discord.Forbidden, discord.HTTPException):
+            skipped += 1
+
+    await ctx.send(
+        embed=make_embed(
+            "Đã Làm Đẹp Kênh",
+            f"Đã đổi **{renamed}** kênh. Bỏ qua **{skipped}** kênh do đã đúng tên hoặc thiếu quyền.",
+            discord.Color.fuchsia(),
+        )
+    )
+
+
+@bot.command(name="serverinfo", aliases=["severinfo", "svinfo"])
+async def serverinfo(ctx: commands.Context) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+
+    guild = ctx.guild
+    humans = sum(1 for member in guild.members if not member.bot)
+    bots = sum(1 for member in guild.members if member.bot)
+    text_channels = len(guild.text_channels)
+    voice_channels = len(guild.voice_channels)
+    categories = len(guild.categories)
+    created_at = discord.utils.format_dt(guild.created_at, style="F")
+
+    embed = make_embed("Thông Tin Server", color=discord.Color.blurple())
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    embed.add_field(name="Tên", value=guild.name, inline=True)
+    embed.add_field(name="ID", value=f"`{guild.id}`", inline=True)
+    embed.add_field(name="Chủ server", value=f"<@{guild.owner_id}>", inline=True)
+    embed.add_field(name="Thành viên", value=f"{humans} người | {bots} bot | tổng {guild.member_count}", inline=False)
+    embed.add_field(name="Kênh", value=f"{text_channels} text | {voice_channels} voice | {categories} category", inline=False)
+    embed.add_field(name="Role", value=str(len(guild.roles)), inline=True)
+    embed.add_field(name="Boost", value=f"Level {guild.premium_tier} | {guild.premium_subscription_count} boost", inline=True)
+    embed.add_field(name="Tạo lúc", value=created_at, inline=False)
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="sendrules", aliases=["rules15", "guirule", "ruleserver"])
+async def sendrules(ctx: commands.Context, channel: Optional[discord.TextChannel] = None) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not isinstance(ctx.author, discord.Member) or not ctx.author.guild_permissions.manage_guild:
+        await ctx.send("Bạn cần quyền **Manage Server** để gửi bảng luật.")
+        return
+
+    target_channel = channel or ctx.channel
+    rules_text = "\n".join(f"**{index}.** {rule}" for index, rule in enumerate(SERVER_RULES_15, start=1))
+    embed = make_embed(
+        "Luật Server",
+        rules_text,
+        discord.Color.gold(),
+    )
+    embed.set_footer(text="Vui lòng đọc kỹ luật trước khi tham gia hoạt động trong server.")
+    try:
+        await target_channel.send(embed=embed)
+    except (discord.Forbidden, discord.HTTPException):
+        await ctx.send("Bot không gửi được bảng luật vào kênh đó.")
+        return
+
+    if target_channel.id != ctx.channel.id:
+        await ctx.send(f"Đã gửi bảng luật vào {target_channel.mention}.")
+
+
+@bot.command(name="announce", aliases=["thongbao", "announcement"])
+async def announce(ctx: commands.Context, channel: discord.TextChannel, *, message: str) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not isinstance(ctx.author, discord.Member) or not ctx.author.guild_permissions.manage_guild:
+        await ctx.send("Bạn cần quyền **Manage Server** để gửi thông báo.")
+        return
+
+    embed = make_embed("Thông Báo", message[:4000], discord.Color.blurple())
+    embed.set_footer(text=f"Gửi bởi {ctx.author.display_name}")
+    try:
+        await channel.send(embed=embed)
+    except (discord.Forbidden, discord.HTTPException):
+        await ctx.send("Bot không gửi được thông báo vào kênh đó.")
+        return
+    await ctx.send(f"Đã gửi thông báo vào {channel.mention}.")
+
+
+@bot.command(name="slowmode", aliases=["slow", "chamchat"])
+async def slowmode(ctx: commands.Context, seconds: Optional[int] = None, channel: Optional[discord.TextChannel] = None) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not isinstance(ctx.author, discord.Member) or not ctx.author.guild_permissions.manage_channels:
+        await ctx.send("Bạn cần quyền **Manage Channels** để chỉnh slowmode.")
+        return
+    if seconds is None or seconds < 0 or seconds > 21600:
+        await ctx.send(f"Cách dùng: `{get_prefix()}slowmode <0-21600_giây> [#kênh]`")
+        return
+
+    target_channel = channel or ctx.channel
+    if not isinstance(target_channel, discord.TextChannel):
+        await ctx.send("Slowmode chỉ dùng cho kênh text.")
+        return
+    try:
+        await target_channel.edit(slowmode_delay=seconds, reason=f"Đổi slowmode bởi {ctx.author}")
+    except (discord.Forbidden, discord.HTTPException):
+        await ctx.send("Bot không chỉnh được slowmode kênh đó.")
+        return
+
+    await ctx.send(embed=make_embed("Đã Chỉnh Slowmode", f"{target_channel.mention}: **{seconds} giây**", discord.Color.green()))
+
+
+async def set_channel_lock(ctx: commands.Context, channel: Optional[discord.TextChannel], locked: bool) -> None:
+    if ctx.guild is None:
+        await ctx.send("Lệnh này chỉ dùng trong server thôi :vv")
+        return
+    if not isinstance(ctx.author, discord.Member) or not ctx.author.guild_permissions.manage_channels:
+        await ctx.send("Bạn cần quyền **Manage Channels** để khóa/mở kênh.")
+        return
+
+    target_channel = channel or ctx.channel
+    if not isinstance(target_channel, discord.TextChannel):
+        await ctx.send("Lệnh này chỉ dùng cho kênh text.")
+        return
+
+    overwrite = target_channel.overwrites_for(ctx.guild.default_role)
+    overwrite.send_messages = False if locked else None
+    try:
+        await target_channel.set_permissions(
+            ctx.guild.default_role,
+            overwrite=overwrite,
+            reason=f"{'Khóa' if locked else 'Mở'} kênh bởi {ctx.author}",
+        )
+    except (discord.Forbidden, discord.HTTPException):
+        await ctx.send("Bot không chỉnh được permission kênh đó.")
+        return
+
+    title = "Đã Khóa Kênh" if locked else "Đã Mở Kênh"
+    description = f"{target_channel.mention} {'đã bị khóa chat cho @everyone.' if locked else 'đã mở chat lại cho @everyone.'}"
+    await ctx.send(embed=make_embed(title, description, discord.Color.red() if locked else discord.Color.green()))
+
+
+@bot.command(name="lockchannel", aliases=["lock", "khoakenh"])
+async def lockchannel(ctx: commands.Context, channel: Optional[discord.TextChannel] = None) -> None:
+    await set_channel_lock(ctx, channel, True)
+
+
+@bot.command(name="unlockchannel", aliases=["unlock", "mokenh"])
+async def unlockchannel(ctx: commands.Context, channel: Optional[discord.TextChannel] = None) -> None:
+    await set_channel_lock(ctx, channel, False)
+
+
 @bot.command(name="setupserver", aliases=["beautifyserver", "lamdepserver"])
 async def setupserver(ctx: commands.Context) -> None:
     if ctx.guild is None:
@@ -6070,14 +6578,20 @@ async def wipeallserver(ctx: commands.Context, confirm: Optional[str] = None) ->
 
 
 @bot.command(name="help")
-async def help_command(ctx: commands.Context) -> None:
+async def help_command(ctx: commands.Context, category: Optional[str] = None) -> None:
     prefix = get_prefix()
-    view = HelpView(prefix)
-    embed = view.build_embed()
+    page = normalize_help_page(category)
+    embed = build_help_page(prefix, page)
+    if category is not None and page is None:
+        embed.add_field(
+            name="Không thấy nhóm đó",
+            value=f"Dùng `{prefix}help` để xem các nhóm hợp lệ.",
+            inline=False,
+        )
     reminder = get_daily_reminder(ctx.author.id)
-    if reminder:
+    if reminder and page is None:
         embed.add_field(name="Nhắc daily", value=reminder, inline=False)
-    await ctx.send(embed=embed, view=view)
+    await ctx.send(embed=embed)
 
 
 @bot.event
