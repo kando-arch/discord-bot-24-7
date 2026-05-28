@@ -2738,59 +2738,48 @@ class HelpView(discord.ui.View):
 
         embed = make_embed("Help • Server", color=discord.Color.red())
         embed.add_field(
-            name="Bảo vệ / setup",
+            name="Setup / dọn",
             value=(
-                f"`{self.prefix}clear <số_tin>` / `{self.prefix}trash <số_tin>`\n"
-                f"`{self.prefix}setupserver` - Tạo/gom category và kênh theo style đẹp hơn\n"
-                f"`{self.prefix}applybotrules` - Áp lại permission cố định cho bot khác theo đúng kênh\n"
-                f"`{self.prefix}autosetallbots` - Quét toàn bộ bot ngoài và tự set khu cho từng bot\n"
-                f"`{self.prefix}setuproles` - Tự tạo bộ role mẫu cho server\n"
-                f"`{self.prefix}setupticketsv2` - Dựng sẵn khung role/kênh/permission cho Tickets v2\n"
-                f"`{self.prefix}ticketpanel [#kênh]` - Gửi panel mở ticket"
+                f"`{self.prefix}clear <số>` / `{self.prefix}trash <số>`\n"
+                f"`{self.prefix}setupserver`\n"
+                f"`{self.prefix}setuproles`\n"
+                f"`{self.prefix}setupticketsv2`\n"
+                f"`{self.prefix}ticketpanel [#kênh]`\n"
+                f"`{self.prefix}cleansetupserver`\n"
+                f"`{self.prefix}wipeallserver confirm`"
             ),
             inline=False,
         )
         embed.add_field(
             name="Bot / member",
             value=(
-                f"`{self.prefix}changenamebot` - Đổi tên bot thành `SKG|BOT`, gắn role `BOT SKG`\n"
-                f"`{self.prefix}changenamemember` - Đổi tên member thành `SKG| tên`\n"
-                f"`{self.prefix}setbotzone @bot <zone>` - Gán bot vào khu như `chat`, `welcome`, `giveaway`\n"
-                f"`{self.prefix}botchat @bot`, `{self.prefix}botwelcome @bot`, `{self.prefix}botgiveaway @bot`\n"
-                f"`{self.prefix}setbotchannel @bot #kênh` - Gán bot vào đúng 1 kênh cụ thể\n"
-                f"`{self.prefix}clearbotzone @bot` - Bỏ zone riêng của bot đó\n"
-                f"`{self.prefix}checkbotperms` - Kiểm tra bot có quyền nguy hiểm"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Dọn server / tự động",
-            value=(
-                f"`{self.prefix}cleansetupserver` - Xóa toàn bộ layout mà setupserver đã tạo\n"
-                f"`{self.prefix}wipeallserver confirm` - Xóa gần như toàn bộ server, giữ lại kênh hiện tại\n"
-                "Bot đang tự chống spam tin nhắn liên tục.\n"
-                "Bot lạ vào server sẽ bị kick nếu không nằm trong danh sách cho phép.\n"
-                "Bot có thể DM admin khi có bot lạ được thêm.\n"
-                "Bot khác sẽ bị ép nói đúng kênh theo loại bot."
+                f"`{self.prefix}changenamebot`\n"
+                f"`{self.prefix}changenamemember`\n"
+                f"`{self.prefix}applybotrules`\n"
+                f"`{self.prefix}autosetallbots`\n"
+                f"`{self.prefix}setbotzone @bot <zone>`\n"
+                f"`{self.prefix}setbotchannel @bot #kênh`\n"
+                f"`{self.prefix}clearbotzone @bot`\n"
+                f"`{self.prefix}checkbotperms`"
             ),
             inline=False,
         )
         embed.add_field(
             name="Cải tiến server",
             value=(
-                f"`{self.prefix}serverinfo` - Xem thống kê server\n"
-                f"`{self.prefix}sendrules [#kênh]` - Gửi bảng 15 luật server\n"
-                f"`{self.prefix}announce #kênh <nội_dung>` - Gửi thông báo embed\n"
-                f"`{self.prefix}slowmode <giây> [#kênh]` - Đặt slowmode\n"
+                f"`{self.prefix}serverinfo`\n"
+                f"`{self.prefix}sendrules [#kênh]`\n"
+                f"`{self.prefix}announce #kênh <nội_dung>`\n"
+                f"`{self.prefix}slowmode <giây> [#kênh]`\n"
                 f"`{self.prefix}lockchannel [#kênh]` / `{self.prefix}unlockchannel [#kênh]`\n"
-                f"`{self.prefix}stylechannel [#kênh] <style> <tên>` - Làm đẹp 1 kênh\n"
-                f"`{self.prefix}stylechannels <style> confirm` - Làm đẹp toàn bộ kênh"
+                f"`{self.prefix}stylechannel [#kênh] <style> <tên>`\n"
+                f"`{self.prefix}stylechannels <style> confirm`"
             ),
             inline=False,
         )
         embed.add_field(
-            name="Quyền dùng lệnh",
-            value="Lệnh layout/xóa server vẫn ưu tiên **chủ server**. Lệnh thông báo, slowmode, khóa kênh cần quyền **Manage Server** hoặc **Manage Channels** tùy lệnh.",
+            name="Ghi chú",
+            value="Các lệnh này cần quyền server phù hợp. Riêng lệnh đổi toàn bộ/xóa layout nên để chủ server dùng.",
             inline=False,
         )
         return embed
